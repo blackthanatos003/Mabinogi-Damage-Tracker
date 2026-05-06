@@ -27,6 +27,7 @@ function formatLargeNumber(num) {
     return formatted.replace(/\.0(?=[A-Z])/, '');
 }
 export default function BurstCard({ bands, graphBands, setGraphBands }) {
+    if (!bands || bands.length === 0) return null;
     const cardLabel = bands[0].label
     const [activeStep, setActiveStep] = useState(0);
 

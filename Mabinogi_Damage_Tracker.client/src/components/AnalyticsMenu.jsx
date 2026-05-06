@@ -27,7 +27,7 @@ function formatTimeStamp(ut) {
 function transformDataPieDamage(apiData) {
     return apiData.map(item => ({
         label: item.label,
-        value: item.data.at(-1)
+        value: item.data.at(-1) ?? 0
     }));
 }
 
@@ -66,53 +66,26 @@ export default function AnalyticsMenu({ start_ut, end_ut }) {
         async function getDamageBands() {
             const newBands = []
             const newGraphBands = []
-            await fetch(`http://${window.location.hostname}:5004/Home/GetListOfDistinctBiggestBurstofDamageInUTBetweenTimes?start_ut=${start_ut}&end_ut=${end_ut}&burst_timeframe=${60}&count=${burstCount}`)
-                .then(response => response.json())
-                .then(data => {
-                    const bands = data.map((res) => {
-                        const band = {
-                            label: '60s',
-                            start: formatTimeStamp(res.unix_timestamp),
-                            end: formatTimeStamp(res.unix_timestamp + 60),
-                            ...res,
-                        }
-                        return band
-                    })
-                    newGraphBands.push(bands[0])
-                    newBands.push(bands)
-                })
 
-            await fetch(`http://${window.location.hostname}:5004/Home/GetListOfDistinctBiggestBurstofDamageInUTBetweenTimes?start_ut=${start_ut}&end_ut=${end_ut}&burst_timeframe=${30}&count=${burstCount}`)
-                .then(response => response.json())
-                .then(data => {
-                    const bands = data.map((res) => {
-                        const band = {
-                            label: '30s',
-                            start: formatTimeStamp(res.unix_timestamp),
-                            end: formatTimeStamp(res.unix_timestamp + 60),
-                            ...res,
-                        }
-                        return band
-                    })
+            async function fetchBand(timeframe, label) {
+                try {
+                    const response = await fetch(`http://${window.location.hostname}:5004/Home/GetListOfDistinctBiggestBurstofDamageInUTBetweenTimes?start_ut=${start_ut}&end_ut=${end_ut}&burst_timeframe=${timeframe}&count=${burstCount}`)
+                    const data = await response.json()
+                    if (!data || !Array.isArray(data) || data.length === 0) return
+                    const bands = data.map((res) => ({
+                        label,
+                        start: formatTimeStamp(res.unix_timestamp),
+                        end: formatTimeStamp(res.unix_timestamp + timeframe),
+                        ...res,
+                    }))
                     newGraphBands.push(bands[0])
                     newBands.push(bands)
-                })
+                } catch(e) { console.error(e) }
+            }
 
-            await fetch(`http://${window.location.hostname}:5004/Home/GetListOfDistinctBiggestBurstofDamageInUTBetweenTimes?start_ut=${start_ut}&end_ut=${end_ut}&burst_timeframe=${15}&count=${burstCount}`)
-                .then(response => response.json())
-                .then(data => {
-                    const bands = data.map((res) => {
-                        const band = {
-                            label: '15s',
-                            start: formatTimeStamp(res.unix_timestamp),
-                            end: formatTimeStamp(res.unix_timestamp + 60),
-                            ...res,
-                        }
-                        return band
-                    })
-                    newGraphBands.push(bands[0])
-                    newBands.push(bands)
-                })
+            await fetchBand(60, '60s')
+            await fetchBand(30, '30s')
+            await fetchBand(15, '15s')
             setGraphBands(newGraphBands)
             setBands(newBands)
         }
