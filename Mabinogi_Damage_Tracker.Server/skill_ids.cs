@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -939,36 +940,50 @@ namespace Mabinogi_Damage_Tracker
 
     public static class SkillNameResolver
     {
-        private static readonly Dictionary<ushort, string> _names;
+        private static readonly Dictionary<ushort, string> _displayNames;
 
         static SkillNameResolver()
         {
-            _names = new Dictionary<ushort, string>();
+            _displayNames = new Dictionary<ushort, string>();
+
+            // 1. Load from external JSON file (takes priority)
+            try
+            {
+                string jsonPath = Path.Combine(AppContext.BaseDirectory, "skill_names.json");
+                if (File.Exists(jsonPath))
+                {
+                    var json = File.ReadAllText(jsonPath);
+                    var dict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+                    if (dict != null)
+                    {
+                        foreach (var kv in dict)
+                        {
+                            if (kv.Key.StartsWith("_")) continue; // skip comments
+                            if (ushort.TryParse(kv.Key, out var id))
+                                _displayNames[id] = kv.Value;
+                        }
+                    }
+                }
+            }
+            catch { /* JSON load failed, continue with enum fallback */ }
+
+            // 2. Fill gaps from SkillId enum (CamelCase split)
             foreach (SkillId val in Enum.GetValues<SkillId>())
             {
-                _names[(ushort)val] = val.ToString();
+                var id = (ushort)val;
+                if (!_displayNames.ContainsKey(id))
+                    _displayNames[id] = SplitCamelCase(val.ToString());
             }
         }
 
         public static string GetName(ushort skillId)
         {
-            return _names.TryGetValue(skillId, out var name) ? name : $"Unknown({skillId})";
+            return _displayNames.TryGetValue(skillId, out var name) ? name : $"Skill-{skillId}";
         }
 
-        /// <summary>
-        /// Returns a user-friendly display name for a skill ID.
-        /// Renames passive/mastery skills to more intuitive labels.
-        /// </summary>
         public static string GetDisplayName(ushort skillId)
         {
-            return skillId switch
-            {
-                0 => "Other",
-                23002 => "Normal Attack",
-                _ => _names.TryGetValue(skillId, out var name)
-                    ? SplitCamelCase(name)
-                    : $"Skill-{skillId}"
-            };
+            return _displayNames.TryGetValue(skillId, out var name) ? name : $"Skill-{skillId}";
         }
 
         private static string SplitCamelCase(string name)

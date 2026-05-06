@@ -1,0 +1,7 @@
+{
+  "_comment": "Skill ID to display name mapping. Add new entries for CN-specific or future skills.",
+  "0": "Other",
+  "23002": "Normal Attack",
+  "59101": "聚焦连击",
+  "59105": "爆裂冲刺"
+}
