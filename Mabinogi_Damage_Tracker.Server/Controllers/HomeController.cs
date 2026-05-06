@@ -136,11 +136,11 @@ namespace Mabinogi_Damage_tracker.Controllers
             return Json(damage_series);
         }
 
-        public JsonResult GetSkillDamageBreakdown(int start_ut, int end_ut)
+        public IActionResult GetSkillDamageBreakdown(int start_ut, int end_ut)
         {
             List<object> skill_damages = db_helper.Get_Damages_GroupedBy_Skill_BetweenUT(start_ut, end_ut);
-            if (skill_damages == null) return Json(new List<object>());
-            return Json(skill_damages);
+            if (skill_damages == null) return NotFound();
+            return Ok(Json(skill_damages));
         }
 
         public ActionResult Pause_parser()
