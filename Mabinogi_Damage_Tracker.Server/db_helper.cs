@@ -984,13 +984,13 @@ namespace Mabinogi_Damage_tracker
                 {
                     connection.Open();
                     using (var command = new SqliteCommand(@"
-                        SELECT skill, subskill, SUM(damage) AS total_dmg, COUNT(*) AS hit_count,
+                        SELECT skill, SUM(damage) AS total_dmg, COUNT(*) AS hit_count,
                                MAX(damage) AS max_hit
                         FROM damages
                         WHERE ut BETWEEN @start_ut AND @end_ut
                           AND playerid >= 0x0010000000000001
                           AND playerid <= 0x0010010000000001
-                        GROUP BY skill, subskill
+                        GROUP BY skill
                         ORDER BY total_dmg DESC
                     ", connection))
                     {
@@ -999,27 +999,24 @@ namespace Mabinogi_Damage_tracker
 
                         var results = new List<object>();
                         double grandTotal = 0;
-                        var rows = new List<(int skill, int subskill, double dmg, int count, double max)>();
+                        var rows = new List<(int skill, double dmg, int count, double max)>();
 
                         using (var reader = command.ExecuteReader())
                         {
                             while (reader.Read())
                             {
                                 int sk = reader.GetInt32(0);
-                                int ssk = reader.GetInt32(1);
-                                double dmg = reader.GetDouble(2);
-                                int cnt = reader.GetInt32(3);
-                                double max = reader.GetDouble(4);
+                                double dmg = reader.GetDouble(1);
+                                int cnt = reader.GetInt32(2);
+                                double max = reader.GetDouble(3);
                                 grandTotal += dmg;
-                                rows.Add((sk, ssk, dmg, cnt, max));
+                                rows.Add((sk, dmg, cnt, max));
                             }
                         }
 
                         foreach (var row in rows)
                         {
-                            string name = SkillNameResolver.GetName((ushort)row.skill);
-                            if (row.subskill != 0)
-                                name += $" ({SkillNameResolver.GetName((ushort)row.subskill)})";
+                            string name = SkillNameResolver.GetDisplayName((ushort)row.skill);
                             double pct = grandTotal > 0 ? row.dmg / grandTotal * 100.0 : 0;
                             results.Add(new
                             {

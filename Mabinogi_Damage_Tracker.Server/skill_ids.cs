@@ -954,5 +954,35 @@ namespace Mabinogi_Damage_Tracker
         {
             return _names.TryGetValue(skillId, out var name) ? name : $"Unknown({skillId})";
         }
+
+        /// <summary>
+        /// Returns a user-friendly display name for a skill ID.
+        /// Renames passive/mastery skills to more intuitive labels.
+        /// </summary>
+        public static string GetDisplayName(ushort skillId)
+        {
+            return skillId switch
+            {
+                0 => "Other",
+                23002 => "Normal Attack",
+                _ => _names.TryGetValue(skillId, out var name)
+                    ? SplitCamelCase(name)
+                    : $"Skill-{skillId}"
+            };
+        }
+
+        private static string SplitCamelCase(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return name;
+            var sb = new System.Text.StringBuilder();
+            sb.Append(name[0]);
+            for (int i = 1; i < name.Length; i++)
+            {
+                if (char.IsUpper(name[i]) && !char.IsUpper(name[i - 1]))
+                    sb.Append(' ');
+                sb.Append(name[i]);
+            }
+            return sb.ToString();
+        }
     }
 }
