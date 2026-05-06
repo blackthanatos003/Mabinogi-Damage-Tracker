@@ -8,3 +8,6 @@
 *.pcapng
 *.pcapng
 Mabinogi_Damage_Tracker.Server/out.pcapng
+/Release/
+/release-*.zip
+/Mabinogi_Damage_Tracker.Server/wwwroot
