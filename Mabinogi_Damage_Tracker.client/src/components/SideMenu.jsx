@@ -33,6 +33,9 @@ export default function SideMenu() {
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', gap: '12px' }}>
         <img src="mabinogi.png" alt="M" width="100" height="100" />
         <Typography>Mabinogi Damage Tracker</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
+          MabiDTS_0.1
+        </Typography>
       </Box>
       <Divider />
       <Box
