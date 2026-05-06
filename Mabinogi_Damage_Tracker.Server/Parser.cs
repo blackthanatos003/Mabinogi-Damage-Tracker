@@ -452,9 +452,9 @@ namespace Mabinogi_Damage_tracker
                 // read the UInt16 skill ID that follows at a fixed offset.
                 ushort cn_skillid = 0;
                 int subpacket_end = begining_of_packet_cursor + sub_packet_length;
-                // Scan starts after the fixed header: sign(1)+len(4)+flag(1)+opcode(4)+id(8) = 18,
-                // plus variable int (~1-3), plus item_count(1)+zero(1) ≈ 23
-                int scan_start = begining_of_packet_cursor + 23;
+                // Scan starts right after the 8-byte id field (offset 18 from sign),
+                // to ensure we catch the player ID wherever it appears in the data area
+                int scan_start = begining_of_packet_cursor + 18;
                 for (int pos = scan_start; pos < subpacket_end - 16; pos++)
                 {
                     if (tcp.PayloadData[pos] == 0x00 && tcp.PayloadData[pos + 1] == 0x10)
