@@ -457,7 +457,9 @@ namespace Mabinogi_Damage_tracker
                 int scan_start = begining_of_packet_cursor + 18;
                 for (int pos = scan_start; pos < subpacket_end - 16; pos++)
                 {
-                    if (tcp.PayloadData[pos] == 0x00 && tcp.PayloadData[pos + 1] == 0x10)
+                    // Require type byte 0x04 (UInt64) before the player ID prefix
+                    if (pos > 0 && tcp.PayloadData[pos - 1] == 0x04
+                        && tcp.PayloadData[pos] == 0x00 && tcp.PayloadData[pos + 1] == 0x10)
                     {
                         UInt64 candidate = BinaryPrimitives.ReadUInt64BigEndian(tcp.PayloadData.AsSpan(pos));
                         if (candidate >= 0x0010000000000001 && candidate <= 0x0010010000000001)
@@ -468,6 +470,7 @@ namespace Mabinogi_Damage_tracker
                             if (sidx + 2 <= subpacket_end)
                             {
                                 cn_skillid = BinaryPrimitives.ReadUInt16BigEndian(tcp.PayloadData.AsSpan(sidx));
+                                LogsController.WriteLog(string.Format("[CN-SCAN] found at offset {0}, skill=0x{1:X4}", pos, cn_skillid));
                             }
                             break;
                         }
