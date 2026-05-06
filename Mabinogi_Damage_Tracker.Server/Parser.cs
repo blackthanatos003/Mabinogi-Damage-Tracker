@@ -468,7 +468,6 @@ namespace Mabinogi_Damage_tracker
                             if (sidx + 2 <= subpacket_end)
                             {
                                 cn_skillid = BinaryPrimitives.ReadUInt16BigEndian(tcp.PayloadData.AsSpan(sidx));
-                                Debug.WriteLine("CN skill found: 0x{0:X4} at offset {1}", cn_skillid, sidx);
                             }
                             break;
                         }
@@ -534,7 +533,15 @@ namespace Mabinogi_Damage_tracker
                     if ((subsub_ttype & 2) != 0)
                     {
                         attacker_id = entityID;
-                        skill = cn_skillid != 0 ? (SkillId)cn_skillid : (SkillId)skillid;
+                        if (cn_skillid != 0)
+                        {
+                            skill = (SkillId)cn_skillid;
+                            LogsController.WriteLog(string.Format("[CN-SKILL] 0x{0:X4} ({1})", cn_skillid, skill));
+                        }
+                        else
+                        {
+                            skill = (SkillId)skillid;
+                        }
                         subskill = (SkillId)subskillid;
 
                         throwawaypacket = ("throw away packet: " + BitConverter.ToString(tcp.PayloadData, subsub_pack_start_cursor + 43, (int)subsub_pack_len));
