@@ -976,6 +976,66 @@ namespace Mabinogi_Damage_tracker
             }
         }
 
+        public static List<object> Get_Damages_GroupedBy_Skill_BetweenUT(int start_ut, int end_ut)
+        {
+            try
+            {
+                using (var connection = new SqliteConnection(db_connection))
+                {
+                    connection.Open();
+                    using (var command = new SqliteCommand(@"
+                        SELECT skill, subskill, SUM(damage) AS total_dmg, COUNT(*) AS hit_count,
+                               MAX(damage) AS max_hit
+                        FROM damages
+                        WHERE ut BETWEEN @start_ut AND @end_ut
+                          AND playerid >= 0x0010000000000001
+                          AND playerid <= 0x0010010000000001
+                        GROUP BY skill, subskill
+                        ORDER BY total_dmg DESC
+                    ", connection))
+                    {
+                        command.Parameters.AddWithValue("@start_ut", start_ut);
+                        command.Parameters.AddWithValue("@end_ut", end_ut);
 
+                        var results = new List<object>();
+                        double grandTotal = 0;
+                        var rows = new List<(int skill, int subskill, double dmg, int count, double max)>();
+
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                int sk = reader.GetInt32(0);
+                                int ssk = reader.GetInt32(1);
+                                double dmg = reader.GetDouble(2);
+                                int cnt = reader.GetInt32(3);
+                                double max = reader.GetDouble(4);
+                                grandTotal += dmg;
+                                rows.Add((sk, ssk, dmg, cnt, max));
+                            }
+                        }
+
+                        foreach (var row in rows)
+                        {
+                            string name = SkillNameResolver.GetName((ushort)row.skill);
+                            if (row.subskill != 0)
+                                name += $" ({SkillNameResolver.GetName((ushort)row.subskill)})";
+                            double pct = grandTotal > 0 ? row.dmg / grandTotal * 100.0 : 0;
+                            results.Add(new
+                            {
+                                skillId = row.skill,
+                                skillName = name,
+                                totalDamage = Math.Round(row.dmg, 1),
+                                hitCount = row.count,
+                                percentage = Math.Round(pct, 1),
+                                maxHit = Math.Round(row.max, 1)
+                            });
+                        }
+                        return results;
+                    }
+                }
+            }
+            catch { return null; }
+        }
     }
 }

@@ -15,6 +15,7 @@ import DamageScatterPlot from './DamageScatterPlot';
 import LargestHitCard from './LargestHitCard';
 import BurstCard from './BurstCard';
 import HealingCard from './HealingCard';
+import SkillDamagePieChart from './SkillDamagePieChart';
 
 function formatTimeStamp(ut) {
     return new Date((ut) * 1000).toLocaleTimeString(
@@ -55,6 +56,8 @@ export default function AnalyticsMenu({ start_ut, end_ut }) {
     const [graphBands, setGraphBands] = useState([])
     // Scatter Plot
     const [scatterPlotSeries, setScatterPlotSeries] = useState([]);
+    // Skill Damage Breakdown
+    const [skillDamageData, setSkillDamageData] = useState([]);
 
 
     useEffect(() => {
@@ -200,7 +203,21 @@ export default function AnalyticsMenu({ start_ut, end_ut }) {
 
                 setScatterPlotSeries(series)
             })
-        
+
+        // Fetch skill damage breakdown
+        fetch(`http://${window.location.hostname}:5004/Home/GetSkillDamageBreakdown?start_ut=${start_ut}&end_ut=${end_ut}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.value) {
+                    const pieData = data.value.map(item => ({
+                        label: item.skillName,
+                        value: item.totalDamage,
+                    }));
+                    setSkillDamageData(pieData);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+
         getDamageBands()
     }, [start_ut, end_ut, burstCount, largestDamageInstanceCount]);
     
@@ -257,6 +274,14 @@ export default function AnalyticsMenu({ start_ut, end_ut }) {
                 { /* Player Damange Pie Chart */}
                 <Grid size={{ xs: 12, sm: 12, lg: 8, xl: 4 }} >
                     <PlayerDamagePieChart chartData={damagePieChartData} />
+                </Grid>
+                { /* Skill Damage Pie Chart */}
+                <Grid size={{ xs: 12, sm: 12, lg: 12, xl: 8 }} >
+                    {skillDamageData.length ?
+                        <SkillDamagePieChart chartData={skillDamageData} />
+                        :
+                        <Skeleton variant="rounded" sx={{ height: 400 }} />
+                    }
                 </Grid>
                 { /* Player Damage Line Chart */}
                 <Grid size={{ xs: 12, sm: 12, lg: 12, xl: 8 }} >

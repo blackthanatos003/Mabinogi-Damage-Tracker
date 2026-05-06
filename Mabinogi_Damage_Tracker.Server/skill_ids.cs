@@ -936,5 +936,23 @@ namespace Mabinogi_Damage_Tracker
             AdministrativePicking2 = 65006,
             IgnusPlume = 59060,
     }
-    
+
+    public static class SkillNameResolver
+    {
+        private static readonly Dictionary<ushort, string> _names;
+
+        static SkillNameResolver()
+        {
+            _names = new Dictionary<ushort, string>();
+            foreach (SkillId val in Enum.GetValues<SkillId>())
+            {
+                _names[(ushort)val] = val.ToString();
+            }
+        }
+
+        public static string GetName(ushort skillId)
+        {
+            return _names.TryGetValue(skillId, out var name) ? name : $"Unknown({skillId})";
+        }
+    }
 }
