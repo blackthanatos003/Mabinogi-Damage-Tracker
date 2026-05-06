@@ -444,48 +444,44 @@ namespace Mabinogi_Damage_tracker
                     cursor += sizeof(UInt64);
                 }
 
+                // --- CN skill ID scan ---
+                // On CN servers the real skill ID is in the subpacket data area
+                // (type(4=UInt64)+player_id(8B)+type(1=byte)+val(1B)+
+                //  type(2=UInt16)+zeros(2B)+type(2=UInt16)+skill_id(2B)).
+                // Scan the entire subpacket for player ID (0x0010 prefix) then
+                // read the UInt16 skill ID that follows at a fixed offset.
+                ushort cn_skillid = 0;
+                int subpacket_end = begining_of_packet_cursor + sub_packet_length;
+                // Scan starts after the fixed header: sign(1)+len(4)+flag(1)+opcode(4)+id(8) = 18,
+                // plus variable int (~1-3), plus item_count(1)+zero(1) ≈ 23
+                int scan_start = begining_of_packet_cursor + 23;
+                for (int pos = scan_start; pos < subpacket_end - 16; pos++)
+                {
+                    if (tcp.PayloadData[pos] == 0x00 && tcp.PayloadData[pos + 1] == 0x10)
+                    {
+                        UInt64 candidate = BinaryPrimitives.ReadUInt64BigEndian(tcp.PayloadData.AsSpan(pos));
+                        if (candidate >= 0x0010000000000001 && candidate <= 0x0010010000000001)
+                        {
+                            // Skill ID is 14 bytes after player ID:
+                            // player_id(8) + type(1)+val(1) + type(1)+zeros(2) + type(1) = 14
+                            int sidx = pos + 14;
+                            if (sidx + 2 <= subpacket_end)
+                            {
+                                cn_skillid = BinaryPrimitives.ReadUInt16BigEndian(tcp.PayloadData.AsSpan(sidx));
+                                Debug.WriteLine("CN skill found: 0x{0:X4} at offset {1}", cn_skillid, sidx);
+                            }
+                            break;
+                        }
+                    }
+                }
+                // --- end CN scan ---
+
                 cursor++;
                 UInt32 subsub_packet_count = BinaryPrimitives.ReadUInt32BigEndian(tcp.PayloadData.AsSpan(cursor));
                 cursor += sizeof(UInt32);
 
                 // Safety cap: prevent runaway loop on CN protocol mismatch
                 if (subsub_packet_count > 20) subsub_packet_count = 20;
-
-                // Scan data type headers for CN-specific skill ID
-                // CN protocol places player_id + skill_id in the subpacket data area,
-                // before subsubpackets. Pattern: type(4=UInt64) + player_id(8B) +
-                //   type(1=byte) + val(1B) + type(2=UInt16) + zeros(2B) + type(2=UInt16) + skill_id(2B)
-                ushort cn_skillid = 0;
-                int scan_cursor = cursor;
-                int subpacket_end = begining_of_packet_cursor + sub_packet_length;
-                while (scan_cursor + 2 < subpacket_end)
-                {
-                    byte dtype = tcp.PayloadData[scan_cursor];
-                    if (dtype < 1 || dtype > 7) break;
-                    scan_cursor++;
-
-                    if (dtype == 4 && scan_cursor + 8 <= subpacket_end)
-                    {
-                        UInt64 val = BinaryPrimitives.ReadUInt64BigEndian(tcp.PayloadData.AsSpan(scan_cursor));
-                        scan_cursor += 8;
-                        if (val >= 0x0010000000000001 && val <= 0x0010010000000001)
-                        {
-                            // Found player ID. Skip byte(1B type+1B val) + zeros(1B type+2B val)
-                            if (scan_cursor + 6 < subpacket_end)
-                            {
-                                scan_cursor += 5;
-                                if (tcp.PayloadData[scan_cursor] == 2)
-                                    cn_skillid = BinaryPrimitives.ReadUInt16BigEndian(tcp.PayloadData.AsSpan(scan_cursor + 1));
-                            }
-                            break;
-                        }
-                    }
-                    else if (dtype == 1) { if (scan_cursor < subpacket_end) scan_cursor++; }
-                    else if (dtype == 2) { if (scan_cursor + 2 <= subpacket_end) scan_cursor += 2; }
-                    else if (dtype == 3 || dtype == 5) { if (scan_cursor + 4 <= subpacket_end) scan_cursor += 4; }
-                    else if (dtype == 6) { if (scan_cursor < subpacket_end) { byte slen = tcp.PayloadData[scan_cursor]; scan_cursor += 1 + slen; } }
-                    else if (dtype == 7) { if (scan_cursor + 4 <= subpacket_end) { UInt32 blen = BinaryPrimitives.ReadUInt32LittleEndian(tcp.PayloadData.AsSpan(scan_cursor)); scan_cursor += 4 + (int)blen; } }
-                }
 
                 UInt64 attacker_id = 0;
                 UInt64 enemy_id = 0;
