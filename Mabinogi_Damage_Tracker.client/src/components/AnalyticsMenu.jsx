@@ -122,6 +122,7 @@ export default function AnalyticsMenu({ start_ut, end_ut }) {
         fetch(`http://${window.location.hostname}:5004/Home/GetAggregatedDamageSeriesGroupedByPlayers?start_ut=${start_ut}&end_ut=${end_ut}`)
             .then(response => response.json())
             .then(data => {
+                if (!data || !Array.isArray(data)) return;
                 const sortedData = data.sort((a, b) => {
                     const damageA = a.data.at(-1)
                     const damageB = b.data.at(-1)
@@ -158,6 +159,7 @@ export default function AnalyticsMenu({ start_ut, end_ut }) {
         fetch(`http://${window.location.hostname}:5004/Home/GetListOfDistinctLargestSingleDamageInstance?start_ut=${start_ut}&end_ut=${end_ut}&count=${largestDamageInstanceCount}`)
             .then(response => response.json())
             .then(data => {
+                if (!data || !Array.isArray(data) || data.length === 0) return;
                 setLargestDamageInstances(data)
                 setGraphLargestDamageInstance(data[0])
             })
@@ -172,6 +174,7 @@ export default function AnalyticsMenu({ start_ut, end_ut }) {
         fetch(`http://${window.location.hostname}:5004/Home/GetDamagesBetweenUt?start_ut=${start_ut}&end_ut=${end_ut}`)
             .then(response => response.json())
             .then(data => {
+                if (!data || !Array.isArray(data)) return;
                 const dmgMap = new Map();
 
                 const series = data.reduce((series, damage_simple) => {
