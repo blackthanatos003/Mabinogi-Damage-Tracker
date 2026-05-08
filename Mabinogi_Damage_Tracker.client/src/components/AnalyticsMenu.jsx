@@ -5,6 +5,10 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Skeleton from '@mui/material/Skeleton';
 import Divider from '@mui/material/Divider';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import DamageCard from './DamageCard';
 import PlayerCountCard from './PlayerCountCard';
 import TimeCard from './TimeCard';
@@ -58,6 +62,7 @@ export default function AnalyticsMenu({ start_ut, end_ut }) {
     const [scatterPlotSeries, setScatterPlotSeries] = useState([]);
     // Skill Damage Breakdown
     const [skillDamageData, setSkillDamageData] = useState([]);
+    const [skillDamagePlayer, setSkillDamagePlayer] = useState(-1); // -1 = all players
 
 
     useEffect(() => {
@@ -180,7 +185,7 @@ export default function AnalyticsMenu({ start_ut, end_ut }) {
                 setScatterPlotSeries(series)
             })
 
-        // Fetch skill damage breakdown
+        // Fetch skill damage breakdown (all players)
         fetch(`http://${window.location.hostname}:5004/Home/GetSkillDamageBreakdown?start_ut=${start_ut}&end_ut=${end_ut}`)
             .then(response => response.json())
             .then(data => {
@@ -196,6 +201,25 @@ export default function AnalyticsMenu({ start_ut, end_ut }) {
 
         getDamageBands()
     }, [start_ut, end_ut, burstCount, largestDamageInstanceCount]);
+
+    // Refetch skill damage when player filter changes
+    useEffect(() => {
+        const playerParam = skillDamagePlayer >= 0 ? `&playerId=${skillDamagePlayer}` : '';
+        fetch(`http://${window.location.hostname}:5004/Home/GetSkillDamageBreakdown?start_ut=${start_ut}&end_ut=${end_ut}${playerParam}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.value) {
+                    const pieData = data.value.map(item => ({
+                        label: item.skillName,
+                        value: item.totalDamage,
+                    }));
+                    setSkillDamageData(pieData);
+                } else {
+                    setSkillDamageData([]);
+                }
+            })
+            .catch(error => { console.error('Error:', error); setSkillDamageData([]); });
+    }, [skillDamagePlayer, start_ut, end_ut]);
     
     return (
         <Box>
@@ -253,6 +277,21 @@ export default function AnalyticsMenu({ start_ut, end_ut }) {
                 </Grid>
                 { /* Skill Damage Pie Chart */}
                 <Grid size={{ xs: 12, sm: 12, lg: 12, xl: 8 }} >
+                    <Box sx={{ mb: 2 }}>
+                        <FormControl size="small" sx={{ minWidth: 220 }}>
+                            <InputLabel>Player Filter</InputLabel>
+                            <Select
+                                value={skillDamagePlayer}
+                                label="Player Filter"
+                                onChange={(e) => setSkillDamagePlayer(e.target.value)}
+                            >
+                                <MenuItem value={-1}>All Players</MenuItem>
+                                {damageOverTimeData.map((p) => (
+                                    <MenuItem key={p.id} value={p.id}>{p.label}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Box>
                     {skillDamageData.length ?
                         <SkillDamagePieChart chartData={skillDamageData} />
                         :

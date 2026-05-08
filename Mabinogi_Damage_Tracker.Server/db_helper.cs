@@ -976,26 +976,30 @@ namespace Mabinogi_Damage_tracker
             }
         }
 
-        public static List<object> Get_Damages_GroupedBy_Skill_BetweenUT(int start_ut, int end_ut)
+        public static List<object> Get_Damages_GroupedBy_Skill_BetweenUT(int start_ut, int end_ut, Int64 playerId = 0)
         {
             try
             {
                 using (var connection = new SqliteConnection(db_connection))
                 {
                     connection.Open();
-                    using (var command = new SqliteCommand(@"
+                    string playerFilter = playerId != 0
+                        ? "AND damages.playerid = @playerId"
+                        : "AND playerid >= 0x0010000000000001 AND playerid <= 0x0010010000000001";
+                    using (var command = new SqliteCommand($@"
                         SELECT skill, SUM(damage) AS total_dmg, COUNT(*) AS hit_count,
                                MAX(damage) AS max_hit
                         FROM damages
                         WHERE ut BETWEEN @start_ut AND @end_ut
-                          AND playerid >= 0x0010000000000001
-                          AND playerid <= 0x0010010000000001
+                          {playerFilter}
                         GROUP BY skill
                         ORDER BY total_dmg DESC
                     ", connection))
                     {
                         command.Parameters.AddWithValue("@start_ut", start_ut);
                         command.Parameters.AddWithValue("@end_ut", end_ut);
+                        if (playerId != 0)
+                            command.Parameters.AddWithValue("@playerId", playerId);
 
                         var results = new List<object>();
                         double grandTotal = 0;
