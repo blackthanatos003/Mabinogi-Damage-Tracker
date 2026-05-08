@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { AppContext } from '../AppContext'
 import Grid from '@mui/material/Grid';
+import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Skeleton from '@mui/material/Skeleton';
@@ -254,17 +255,25 @@ export default function AnalyticsMenu({ start_ut, end_ut }) {
                     {largestDamageInstances.length ?
                         <LargestHitCard largestDamageInstances={largestDamageInstances} setGraphLargestDamageInstance={setGraphLargestDamageInstance} />
                         :
-                        <Skeleton variant="rounded" />
+                        <Paper sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Typography variant="body2" color="text.secondary">Insufficient data</Typography>
+                        </Paper>
                     }
                 </Grid>
                 { /* Largets Burst Cards */ }
-                {bands.length ? 
+                {bands.length ?
                     bands.map((band, index) =>
                         <Grid key={`band_${index}`} size={{ xs: 12, sm: 6, lg: 3 }} sx={{ height: '250px', paddingBottom: '14px' }}>
                             <BurstCard bands={band} graphBands={graphBands} setGraphBands={setGraphBands} />
                         </Grid>
                     )
-                    : Array.from(2).map((_) => <Skeleton variant="rounded" />)
+                    : Array.from({length: 2}).map((_, i) => (
+                        <Grid key={`burst_empty_${i}`} size={{ xs: 12, sm: 6, lg: 3 }} sx={{ height: '250px', paddingBottom: '14px' }}>
+                            <Paper sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Typography variant="body2" color="text.secondary">Insufficient data</Typography>
+                            </Paper>
+                        </Grid>
+                    ))
                 }
 
                 { /* Player Damange Pie Chart */}
@@ -286,18 +295,18 @@ export default function AnalyticsMenu({ start_ut, end_ut }) {
                 </Grid>
                 { /* Player Damage Line Chart */}
                 <Grid size={{ xs: 12, sm: 12, lg: 12, xl: 8 }} >
-                    {(damageOverTimeData && graphLargestDamageInstance && graphBands.length) ?
+                    {damageOverTimeData.length ?
                         <DecoratedDamageOverTimeLineGraph chartData={damageOverTimeData} bands={graphBands} largestDamageInstance={graphLargestDamageInstance} start_ut={start_ut} />
                         :
-                        <Skeleton variant="rounded" />
+                        <Skeleton variant="rounded" sx={{ height: 400 }} />
                     }
                 </Grid>
                 { /* Player Damage Scatter Plot */}
                 <Grid size={{ xs: 12, sm: 12, lg: 12, xl: 12 }} >
-                    {(damageOverTimeData && graphLargestDamageInstance && graphBands.length) ?
+                    {damageOverTimeData.length ?
                         <DamageScatterPlot series={scatterPlotSeries}/>
                         :
-                        <Skeleton variant="rounded" />
+                        <Skeleton variant="rounded" sx={{ height: 400 }} />
                     }
                 </Grid>
                 { /* Trim Line Graph */}
