@@ -5,10 +5,6 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Skeleton from '@mui/material/Skeleton';
 import Divider from '@mui/material/Divider';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
 import DamageCard from './DamageCard';
 import PlayerCountCard from './PlayerCountCard';
 import TimeCard from './TimeCard';
@@ -277,23 +273,13 @@ export default function AnalyticsMenu({ start_ut, end_ut }) {
                 </Grid>
                 { /* Skill Damage Pie Chart */}
                 <Grid size={{ xs: 12, sm: 12, lg: 12, xl: 8 }} >
-                    <Box sx={{ mb: 2 }}>
-                        <FormControl size="small" sx={{ minWidth: 220 }}>
-                            <InputLabel>Player Filter</InputLabel>
-                            <Select
-                                value={skillDamagePlayer}
-                                label="Player Filter"
-                                onChange={(e) => setSkillDamagePlayer(e.target.value)}
-                            >
-                                <MenuItem value={-1}>All Players</MenuItem>
-                                {damageOverTimeData.map((p) => (
-                                    <MenuItem key={p.id} value={p.id}>{p.label}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Box>
                     {skillDamageData.length ?
-                        <SkillDamagePieChart chartData={skillDamageData} />
+                        <SkillDamagePieChart
+                            chartData={skillDamageData}
+                            players={damageOverTimeData}
+                            selectedPlayer={skillDamagePlayer}
+                            onPlayerChange={setSkillDamagePlayer}
+                        />
                         :
                         <Skeleton variant="rounded" sx={{ height: 400 }} />
                     }

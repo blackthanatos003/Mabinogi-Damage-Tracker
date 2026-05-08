@@ -4,6 +4,10 @@ import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CircleIcon from '@mui/icons-material/Circle';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 
 const settings = {
     margin: { right: 5 },
@@ -40,7 +44,7 @@ function PieCenterLabel({ children }) {
     );
 }
 
-export default function SkillDamagePieChart({ chartData }) {
+export default function SkillDamagePieChart({ chartData, players, selectedPlayer, onPlayerChange }) {
     if (!chartData || chartData.length === 0) {
         return (
             <Paper sx={{ padding: "16px", height: "100%", display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -52,7 +56,6 @@ export default function SkillDamagePieChart({ chartData }) {
 
     const totalDamage = chartData.reduce((sum, item) => sum + item.value, 0);
 
-    // Merge small slices (< 2%) into "Other"
     const merged = [];
     let otherValue = 0;
     chartData.forEach(item => {
@@ -69,7 +72,24 @@ export default function SkillDamagePieChart({ chartData }) {
 
     return (
         <Paper sx={{ padding: "16px", height: "100%", display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h4" sx={{ mb: 1 }}>Skill Damage</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="h4">Skill Damage</Typography>
+                {players && players.length > 0 && (
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <InputLabel>Player</InputLabel>
+                        <Select
+                            value={selectedPlayer ?? -1}
+                            label="Player"
+                            onChange={(e) => onPlayerChange?.(e.target.value)}
+                        >
+                            <MenuItem value={-1}>All Players</MenuItem>
+                            {players.map((p) => (
+                                <MenuItem key={p.id} value={p.id}>{p.label}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                )}
+            </Box>
             <Box sx={{ display: 'flex', flexDirection: 'row', flex: 1 }}>
                 <PieChart
                     series={[{
@@ -83,7 +103,6 @@ export default function SkillDamagePieChart({ chartData }) {
                 >
                     <PieCenterLabel>{formatLargeNumber(totalDamage)}</PieCenterLabel>
                 </PieChart>
-                {/* Custom legend with percentages */}
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, ml: 2, overflowY: 'auto', maxHeight: 350, flex: 1 }}>
                     {chartData.map((item, idx) => {
                         const pct = totalDamage > 0 ? ((item.value / totalDamage) * 100).toFixed(1) : '0.0';
