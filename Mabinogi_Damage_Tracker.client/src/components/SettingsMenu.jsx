@@ -55,7 +55,7 @@ export default function SettingsMenu() {
         if (event.target.value === undefined) return;
 
         setSelectedAdapter(event.target.value);
-        const response = await fetch(`http://${window.location.hostname}:5004/Home/SaveAdapter?adapter=${event.target.value}`);
+        const response = await fetch(`http://${window.location.hostname}:5004/Home/SaveAdapter?adapter=${encodeURIComponent(event.target.value)}`);
         setOpen(true);
         if (response.ok) {
             setSeverity('success');
