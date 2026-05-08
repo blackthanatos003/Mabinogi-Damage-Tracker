@@ -34,7 +34,7 @@ export default function SideMenu() {
         <img src="mabinogi.png" alt="M" width="100" height="100" />
         <Typography>Mabinogi Damage Tracker</Typography>
         <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
-          MabiDTS_0.6
+          MabiDT_CN_v0.7
         </Typography>
       </Box>
       <Divider />
